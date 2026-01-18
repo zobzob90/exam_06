@@ -6,7 +6,7 @@
 /*   By: eric <eric@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/15 18:04:04 by eric              #+#    #+#             */
-/*   Updated: 2026/01/18 14:07:23 by eric             ###   ########.fr       */
+/*   Updated: 2026/01/18 14:54:11 by eric             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <netinet/ip.h>
@@ -30,6 +31,7 @@ fd_set rfds, wfds, afds;
 char buf_write[1001];
 char buf_read[1001];
 
+// CP FROM THE SUBJECT
 int extract_message(char **buf, char **msg)
 {
 	char	*newbuf;
@@ -76,6 +78,7 @@ char *str_join(char *buf, char *add)
 	strcat(newbuf, add);
 	return (newbuf);
 }
+// END OF CP
 
 void fatal_error()
 {
@@ -115,6 +118,7 @@ int create_socket()
 	max_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (max_fd < 0)
 		fatal_error();
+	// fcntl(max_fd, F_SETFL, O_NONBLOCK); only for testing
 	FD_SET(max_fd, &afds);
 	return (max_fd);
 }
@@ -136,7 +140,10 @@ void handle_new_connection(int sock_fd, struct sockaddr_in *servaddr)
 	socklen_t add = sizeof(*servaddr);
 	int client = accept(sock_fd, (struct sockaddr *)servaddr, &add);
 	if (client >= 0)
+	{
+		// fcntl(client, F_SETFL, O_NONBLOCK);
 		register_client(client);
+	}
 }
 
 void handle_client_message(int fd)
@@ -167,9 +174,9 @@ int main(int ac, char *av[])
     servaddr.sin_addr.s_addr = htonl(2130706433); //
     servaddr.sin_port = htons(atoi(av[1]));       // replace 8080 //
 	if (bind(sock_fd, (const struct sockaddr *)&servaddr, sizeof(servaddr))) //
-        fatal_error();
+		fatal_error();
     if (listen(sock_fd, 10)) // 
-        fatal_error();
+		fatal_error();
 	while (1)
 	{
 		rfds = wfds = afds;
